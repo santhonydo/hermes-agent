@@ -64,6 +64,48 @@ def test_docker_config_migrate_backs_up_and_migrates_legacy_config(tmp_path: Pat
     assert list(tmp_path.glob(".env.bak-*"))
 
 
+def test_docker_config_migrate_backs_up_and_migrates_unversioned_config(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "custom_providers": [
+                    {
+                        "name": "Local API",
+                        "base_url": "http://localhost:8080/v1",
+                        "api_key": "test-key",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    proc = _run_migration(tmp_path)
+
+    assert proc.returncode == 0, proc.stderr
+    assert "Migrating config schema 0 ->" in proc.stdout
+    raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    assert raw["_config_version"] == DEFAULT_CONFIG["_config_version"]
+    assert "custom_providers" not in raw
+    assert raw["providers"]["local-api"]["api"] == "http://localhost:8080/v1"
+    assert list(tmp_path.glob("config.yaml.bak-*"))
+
+
+def test_docker_config_migrate_does_not_rewrite_invalid_yaml(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    original = "model: [unterminated\n"
+    config_path.write_text(original, encoding="utf-8")
+
+    proc = _run_migration(tmp_path)
+
+    assert proc.returncode == 0, proc.stderr
+    assert "Migrating config schema" not in proc.stdout
+    assert "hermes config:" in proc.stderr
+    assert config_path.read_text(encoding="utf-8") == original
+    assert not list(tmp_path.glob("*.bak-*"))
+
+
 def test_docker_config_migrate_skip_env_leaves_config_unchanged(tmp_path: Path) -> None:
     config_path = tmp_path / "config.yaml"
     original = yaml.safe_dump({"_config_version": 11})
