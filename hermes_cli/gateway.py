@@ -2081,7 +2081,16 @@ def _launchd_user_home() -> Path:
     """
     import pwd
 
-    return Path(pwd.getpwuid(os.getuid()).pw_dir)  # windows-footgun: ok — POSIX launchd (macOS) helper, never invoked on Windows
+    try:
+        return Path(pwd.getpwuid(os.getuid()).pw_dir)  # windows-footgun: ok — POSIX launchd (macOS) helper, never invoked on Windows
+    except KeyError:
+        # Some sandboxed macOS contexts preserve the numeric UID but omit the
+        # passwd entry. Fall back to HOME so gateway service commands can still
+        # find the user's LaunchAgents directory.
+        home = os.environ.get("HOME", "").strip()
+        if home:
+            return Path(home).expanduser()
+        return Path.home()
 
 
 def get_launchd_plist_path() -> Path:
@@ -3083,10 +3092,7 @@ def generate_launchd_plist() -> str:
     <true/>
     
     <key>KeepAlive</key>
-    <dict>
-        <key>SuccessfulExit</key>
-        <false/>
-    </dict>
+    <true/>
     
     <key>StandardOutPath</key>
     <string>{log_dir}/gateway.log</string>

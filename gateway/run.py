@@ -32,6 +32,8 @@ import logging
 import os
 import re
 import shlex
+import socket
+import struct
 import sys
 import signal
 import tempfile
@@ -55,6 +57,92 @@ from agent.async_utils import safe_schedule_threadsafe
 from agent.i18n import t
 from hermes_cli.config import cfg_get
 from hermes_cli.fallback_config import get_fallback_chain
+
+
+def _install_dns_fallback() -> None:
+    """Fallback to direct DNS when the OS resolver is unavailable.
+
+    Some sandboxed macOS launch contexts can preserve network access but expose
+    no resolver config to getaddrinfo(), which breaks provider clients. Keep the
+    system resolver first; use this only after a resolver failure.
+    """
+    if os.getenv("HERMES_DISABLE_DNS_FALLBACK", "").strip().lower() in {"1", "true", "yes"}:
+        return
+
+    original_getaddrinfo = socket.getaddrinfo
+    resolvers = ("1.1.1.1", "8.8.8.8", "100.100.100.100")
+
+    def _query_a_records(hostname: str, timeout: float = 2.0) -> list[str]:
+        query_id = int(time.time_ns() & 0xFFFF)
+        labels = hostname.rstrip(".").split(".")
+        qname = b"".join(bytes([len(label)]) + label.encode("idna") for label in labels) + b"\0"
+        packet = struct.pack("!HHHHHH", query_id, 0x0100, 1, 0, 0, 0) + qname + struct.pack("!HH", 1, 1)
+
+        for resolver in resolvers:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(timeout)
+            try:
+                sock.sendto(packet, (resolver, 53))
+                data, _ = sock.recvfrom(512)
+            except OSError:
+                continue
+            finally:
+                sock.close()
+
+            if len(data) < 12:
+                continue
+            resp_id, flags, qdcount, ancount, _, _ = struct.unpack("!HHHHHH", data[:12])
+            if resp_id != query_id or flags & 0x000F:
+                continue
+
+            offset = 12
+            for _ in range(qdcount):
+                while offset < len(data) and data[offset] != 0:
+                    offset += data[offset] + 1
+                offset += 5
+
+            addresses: list[str] = []
+            for _ in range(ancount):
+                if offset >= len(data):
+                    break
+                if data[offset] & 0xC0 == 0xC0:
+                    offset += 2
+                else:
+                    while offset < len(data) and data[offset] != 0:
+                        offset += data[offset] + 1
+                    offset += 1
+                if offset + 10 > len(data):
+                    break
+                rtype, rclass, _, rdlength = struct.unpack("!HHIH", data[offset:offset + 10])
+                offset += 10
+                rdata = data[offset:offset + rdlength]
+                offset += rdlength
+                if rtype == 1 and rclass == 1 and rdlength == 4:
+                    addresses.append(socket.inet_ntoa(rdata))
+            if addresses:
+                return addresses
+        return []
+
+    def _fallback_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+        try:
+            return original_getaddrinfo(host, port, family, type, proto, flags)
+        except socket.gaierror:
+            if not isinstance(host, str) or family not in (0, socket.AF_UNSPEC, socket.AF_INET):
+                raise
+            addresses = _query_a_records(host)
+            if not addresses:
+                raise
+            socktype = type or socket.SOCK_STREAM
+            protocol = proto or socket.IPPROTO_TCP
+            return [
+                (socket.AF_INET, socktype, protocol, "", (address, port))
+                for address in addresses
+            ]
+
+    socket.getaddrinfo = _fallback_getaddrinfo
+
+
+_install_dns_fallback()
 
 # --- Agent cache tuning ---------------------------------------------------
 # Bounds the per-session AIAgent cache to prevent unbounded growth in
