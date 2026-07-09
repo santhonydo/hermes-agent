@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "owner_profile": "orchestrator",
+  "principle": "Messaging topics are conversation surfaces; boards are durable work; controllers keep work moving; terminal outcomes report to mapped topics.",
+  "routing": {
+    "platform:workspace:topic-ceo": {
+      "name": "CEO / Portfolio",
+      "project": "portfolio",
+      "board": null,
+      "workdir": "/absolute/path/to/company-operating-system",
+      "default_mode": "kanban_or_cron_for_durable_work"
+    },
+    "platform:workspace:topic-product-a": {
+      "name": "Product A Engineering",
+      "project": "product-a",
+      "board": "product-a",
+      "workdir": "/absolute/path/to/product-a",
+      "default_mode": "kanban_required"
+    },
+    "platform:workspace:topic-growth": {
+      "name": "Marketing / Growth",
+      "project": "growth",
+      "board": "growth",
+      "workdir": "/absolute/path/to/growth-workspace",
+      "default_mode": "kanban_or_scheduler_required"
+    }
+  },
+  "profiles": {
+    "orchestrator": "CEO-facing router/final report owner",
+    "backend_engineer": "Backend/API/DB/payment/email/deploy worker",
+    "web_engineer": "Frontend/web/product UI worker",
+    "platform_engineer": "Native/mobile/desktop worker",
+    "qaagent": "Independent QA/review/release gate worker",
+    "researcher": "Market/docs/vendor research worker",
+    "marketing_ops": "SEO/social/content/campaign worker",
+    "bizops": "Reports/admin/business operations worker"
+  },
+  "live_work": [],
+  "autonomy_requirements": {
+    "kanban_required_when": [
+      "product/customer-facing work",
+      "build/fix/ship/deploy/QA/release/market/grow",
+      "multi-profile work",
+      "work expected to outlive one turn"
+    ],
+    "true_user_blockers": [
+      "password/passkey/2FA/recovery code",
+      "billing/payment/tax/legal acceptance",
+      "destructive production/admin action",
+      "unapproved public posting",
+      "locked/unavailable physical device",
+      "explicit strategic decision"
+    ]
+  }
+}
