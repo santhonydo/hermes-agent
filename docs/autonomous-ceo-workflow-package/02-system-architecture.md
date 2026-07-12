@@ -134,7 +134,20 @@ Profiles are isolated worker identities. Each may have:
 - Working directory
 - Max turn/runtime budgets
 
-### 7. Controller / watchdog cron
+### 7. Same-project coordination file
+
+When multiple profiles work in the same workdir at the same time, use a short-lived `hey.md` file in the project root as the peer-to-peer coordination surface.
+
+Purpose:
+
+- Tell other agents which files/areas are actively being edited.
+- Explain surprising changes before another worker rolls them back.
+- Coordinate around generated files, migrations, formatting, and broad refactors.
+- Let agents continue without blocking on chat replies.
+
+`hey.md` is not durable project memory. Clean up resolved notes, and keep durable status in the task board.
+
+### 8. Controller / watchdog cron
 
 Purpose:
 
@@ -144,7 +157,7 @@ Purpose:
 - Create recovery tasks when possible.
 - Report only state changes or true blockers.
 
-### 8. Terminal reporter
+### 9. Terminal reporter
 
 Purpose:
 
@@ -152,7 +165,7 @@ Purpose:
 - Deliver concise plain-English summaries to the correct human topic.
 - Avoid repeating already-seen outcomes.
 
-### 9. Knowledge base
+### 10. Knowledge base
 
 Use durable docs for:
 

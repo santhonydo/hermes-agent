@@ -118,11 +118,50 @@ After creating cards:
 
 Never treat “card created” as progress.
 
-## Step 6 — Worker execution contract
+## Step 6 — Multi-agent same-project coordination
+
+When multiple agents may work in the same project/workdir at the same time, every task card and worker prompt must include this coordination instruction:
+
+> Other agents/models may be working in this project at the same time. If anything odd happens, files change, tests shift, or work appears that you did not do, assume it may be another agent before treating it as corruption. Use `hey.md` in the project root to coordinate with other agents. Do not block waiting for a reply; leave concise notes, read existing notes, adapt safely, and keep making progress toward your assigned goal. When your coordination thread is resolved, clean up or archive your messages in `hey.md` so the file does not become stale noise.
+
+### `hey.md` rules
+
+Create `hey.md` at the project/workdir root when concurrent agents are active and it does not already exist.
+
+Use it for short-lived coordination only:
+
+- Announce files/areas you are editing.
+- Ask/answer narrow coordination questions.
+- Note surprising changes you did not make.
+- Warn about commands that may rewrite shared generated files.
+- Record temporary handoffs between simultaneously running agents.
+
+Do not use `hey.md` for durable status, CEO reports, secrets, credentials, or long-term documentation. Durable work still belongs in the board/task system.
+
+Recommended message format:
+
+```markdown
+## <timestamp> — <profile/task id>
+- Working on: <files/area>
+- Intent: <one sentence>
+- Coordination note: <what changed / what I need / what I am avoiding>
+- Cleanup: remove this section when resolved
+```
+
+Worker rules:
+
+1. Read `hey.md` before editing shared files when the task says concurrent agents are active.
+2. Leave a brief note before broad edits, migrations, generated asset rewrites, dependency changes, or formatting sweeps.
+3. Never stop solely because another agent is present. Coordinate, narrow scope, pull/re-read changed files, and continue.
+4. If a conflict appears, preserve both agents’ work where possible, then update the durable task with the decision.
+5. Remove or archive your resolved notes before completing the task.
+
+## Step 7 — Worker execution contract
 
 Workers must:
 
 - Read the task body and relevant local docs.
+- Read `hey.md` when concurrent work is possible.
 - Preserve unrelated dirty work.
 - Make focused changes.
 - Run tests/builds/probes appropriate to the task.
@@ -130,7 +169,7 @@ Workers must:
 - Complete with evidence or block with a precise reason.
 - Never claim user-facing success without verification.
 
-## Step 7 — QA contract
+## Step 8 — QA contract
 
 QA must independently verify:
 
@@ -149,7 +188,7 @@ QA verdicts:
 - `blocked_external`: external service/hardware/network issue.
 - `timeout_with_evidence`: produced useful evidence but needs split/retry.
 
-## Step 8 — Recovery loop
+## Step 9 — Recovery loop
 
 When QA is not green:
 
@@ -162,7 +201,7 @@ When QA is not green:
 
 Do not wait for the CEO to ask “what now?”
 
-## Step 9 — Final report
+## Step 10 — Final report
 
 A final report must include:
 
@@ -175,7 +214,7 @@ A final report must include:
 
 Do not lead with raw task IDs. Include them as references only.
 
-## Step 10 — Update durable knowledge
+## Step 11 — Update durable knowledge
 
 Update only stable docs:
 

@@ -45,6 +45,17 @@
 - [ ] Is a reporter already in place?
 - [ ] Dispatch and inspect.
 
+## Multi-agent same-project checklist
+
+- [ ] Does this board/project have multiple active agents in the same workdir?
+- [ ] Did each task card say whether concurrent agents may be active?
+- [ ] Does the project root have `hey.md` when concurrent work is active?
+- [ ] Did workers read `hey.md` before broad/shared edits?
+- [ ] Did workers leave concise coordination notes instead of blocking?
+- [ ] Were surprising file/test changes treated as possible peer-agent work before rollback?
+- [ ] Were resolved `hey.md` messages cleaned up or archived before task completion?
+- [ ] Is durable status still captured in board/tasks, not only `hey.md`?
+
 ## Not-green recovery checklist
 
 - [ ] Extract exact QA finding.
