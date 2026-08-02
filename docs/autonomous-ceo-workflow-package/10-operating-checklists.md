@@ -104,3 +104,4 @@
 - [ ] Remaining CEO action, if any.
 - [ ] Next step.
 - [ ] No raw logs before explanation.
+- [ ] No redundant static topology/status facts unless they changed, regressed, block work, or were explicitly requested.

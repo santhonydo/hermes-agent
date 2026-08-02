@@ -18,3 +18,6 @@
 
 ## Next step
 <Next executable step, owner/profile, and board/card if applicable.>
+
+## Redundancy filter
+Do not repeat static routing/profile/tooling facts unless they changed, regressed, are blocking work, or the CEO asked for them. A report should emphasize delta and decision, not re-confirm already-known topology.

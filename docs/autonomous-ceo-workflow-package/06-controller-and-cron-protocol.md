@@ -74,6 +74,8 @@ Report only:
 - Safety gate requiring CEO.
 - Material metrics change.
 
+Do not report static topology or already-known routing facts as a fresh outcome. For example, once profile/channel routing is fixed and verified, future reports should not keep repeating that worker profiles remain disabled in chat or that traffic enters through the same orchestrator path. Mention routing/profile topology only when it changed, regressed, blocks work, or the CEO explicitly asks.
+
 ## State files
 
 Every repeating script should keep state:
